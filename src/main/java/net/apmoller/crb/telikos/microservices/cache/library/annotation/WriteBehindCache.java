@@ -9,5 +9,4 @@ import java.lang.annotation.*;
 @Documented
 public @interface WriteBehindCache {
     String key() default "";
-    boolean useArgsHash() default false;
 }

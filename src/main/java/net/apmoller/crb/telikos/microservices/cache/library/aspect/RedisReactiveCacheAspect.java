@@ -18,6 +18,7 @@ import org.redisson.api.RedissonReactiveClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.core.env.Environment;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -26,6 +27,7 @@ import reactor.core.publisher.Mono;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -40,6 +42,8 @@ public class RedisReactiveCacheAspect {
     private final AspectUtils aspectUtils;
     private final ObjectMapper objectMapper;
 
+    @Autowired
+    Environment env;
 
     @Autowired
     @Qualifier("writeThroughRMapCache")
@@ -54,8 +58,14 @@ public class RedisReactiveCacheAspect {
     private RMapCacheReactive<String, Booking> readThroughRMapCacheReader;
 
     @Autowired
-    @Qualifier("cacheAsideRMapCache")
-    private RMapCacheReactive<String, Booking> cacheAsideRMapCache;
+    @Qualifier("cacheAsideRMapReadCache")
+    private RMapCacheReactive<String, Booking> cacheAsideRMapReadCache;
+
+
+    @Autowired
+    @Qualifier("cacheAsideRMapWriteCache")
+    private RMapCacheReactive<String, ProductDto> cacheAsideRMapWriteCache;
+
 
     @Autowired
     private BookingRepository bookingRepository;
@@ -69,7 +79,7 @@ public class RedisReactiveCacheAspect {
 
         WriteThroughCache annotation = method.getAnnotation(WriteThroughCache.class);
 
-        String key = aspectUtils.getKeyVal(joinPoint, annotation.key(), annotation.useArgsHash());
+        String key = aspectUtils.getKeyVal(joinPoint, annotation.key());
 
          if (returnType.isAssignableFrom(Mono.class)) {
 
@@ -85,7 +95,7 @@ public class RedisReactiveCacheAspect {
         try {
 
             ProductDto productDto = (ProductDto) Stream.of(joinPoint.getArgs()).findFirst().get();
-             return this.writeThroughRMapCache.put(key, productDto).then();
+             return this.writeThroughRMapCache.put(key, productDto,Long.parseLong(env.getProperty("redis.cache-ttl")), TimeUnit.MINUTES).then();
 
         } catch (Throwable e) {
             return Mono.error(e);
@@ -102,7 +112,7 @@ public class RedisReactiveCacheAspect {
 
         WriteBehindCache annotation = method.getAnnotation(WriteBehindCache.class);
 
-        String key = aspectUtils.getKeyVal(joinPoint, annotation.key(), annotation.useArgsHash());
+        String key = aspectUtils.getKeyVal(joinPoint, annotation.key());
 
         if (returnType.isAssignableFrom(Mono.class)) {
 
@@ -118,8 +128,7 @@ public class RedisReactiveCacheAspect {
         try {
 
             ProductDto productDto = (ProductDto) Stream.of(joinPoint.getArgs()).findFirst().get();
-            return this.writeBehindRMapCache.put(key, productDto).then();
-
+            return this.writeBehindRMapCache.put(key, productDto,Long.parseLong(env.getProperty("redis.cache-ttl")), TimeUnit.MINUTES).then();
         } catch (Throwable e) {
             return Mono.error(e);
         }
@@ -135,7 +144,7 @@ public class RedisReactiveCacheAspect {
 
         ReadThroughCache annotation = method.getAnnotation(ReadThroughCache.class);
 
-        String key = aspectUtils.getKeyVal(joinPoint, annotation.key(), annotation.useArgsHash());
+        String key = aspectUtils.getKeyVal(joinPoint, annotation.key());
 
         TypeReference typeRefForMapper = aspectUtils.getTypeReference(method);
 
@@ -158,7 +167,7 @@ public class RedisReactiveCacheAspect {
             Booking  booking = bookingRepository.findById(key).toFuture().get();
             // need to convert to Dto
             ProductDto cacheProductDto = ProductDto.builder().id(booking.getId()).price(booking.getPrice()).description(booking.getDescription()).build();
-            return this.readThroughRMapCacheReader.put(key, booking).then();
+            return this.readThroughRMapCacheReader.put(key, booking,Long.parseLong(env.getProperty("redis.cache-ttl")), TimeUnit.MINUTES).then();
 
         } catch (Throwable e) {
             return Mono.error(e);
@@ -167,21 +176,21 @@ public class RedisReactiveCacheAspect {
 
 
 
-    @Around("execution(public * *(..)) && @annotation(net.apmoller.crb.telikos.microservices.cache.library.annotation.CacheAside)")
-    public Object cacheAside(ProceedingJoinPoint joinPoint) {
+    @Around("execution(public * *(..)) && @annotation(net.apmoller.crb.telikos.microservices.cache.library.annotation.CacheAsideRead)")
+    public Object CacheAsideRead(ProceedingJoinPoint joinPoint) {
 
         Method method = aspectUtils.getMethod(joinPoint);
 
         Class<?> returnType = method.getReturnType();
 
-        CacheAside annotation = method.getAnnotation(CacheAside.class);
+        CacheAsideRead annotation = method.getAnnotation(CacheAsideRead.class);
 
-        String key = aspectUtils.getKeyVal(joinPoint, annotation.key(), annotation.useArgsHash());
+        String key = aspectUtils.getKeyVal(joinPoint, annotation.key());
 
         if (returnType.isAssignableFrom(Mono.class)) {
 
-            // Get the  value for teh given Key in cache else return empty
-            return cacheAsideRMapCache.get(key).switchIfEmpty(Mono.defer(() ->Mono.empty()));
+            // Get the  value for the given Key in cache else return empty
+            return cacheAsideRMapReadCache.get(key).switchIfEmpty(Mono.defer(() ->Mono.empty()));
 
 
         }
@@ -191,4 +200,39 @@ public class RedisReactiveCacheAspect {
 
 
 
+
+    @Around("execution(public * *(..)) && @annotation(net.apmoller.crb.telikos.microservices.cache.library.annotation.CacheAsideWrite)")
+    public Object CacheAsideWrite(ProceedingJoinPoint joinPoint) {
+
+        Method method = aspectUtils.getMethod(joinPoint);
+
+        Class<?> returnType = method.getReturnType();
+
+        CacheAsideWrite annotation = method.getAnnotation(CacheAsideWrite.class);
+
+        String key = aspectUtils.getKeyVal(joinPoint, annotation.key());
+
+        if (returnType.isAssignableFrom(Mono.class)) {
+            return  CacheAsideWriteSave(joinPoint, key);
+
+        }
+
+        throw new RuntimeException("RedisReactiveCacheAdd: Annotated method has unsupported return type, expected Mono<?> or Flux<?>");
+    }
+
+    private Mono<?> CacheAsideWriteSave(ProceedingJoinPoint joinPoint, String key) {
+        try {
+
+            ProductDto productDto = (ProductDto) Stream.of(joinPoint.getArgs()).findFirst().get();
+            return this.cacheAsideRMapWriteCache.put(key, productDto,Long.parseLong(env.getProperty("redis.cache-ttl")), TimeUnit.MINUTES).then();
+
+        } catch (Throwable e) {
+            return Mono.error(e);
+        }
+    }
+
+
 }
+
+
+

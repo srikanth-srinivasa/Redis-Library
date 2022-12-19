@@ -11,9 +11,9 @@
     </parent>
 
     <groupId>net.apmoller.crb.telikos.microservices.cache.library</groupId>
-    <artifactId>redis-reactive-cache</artifactId>
-    <version>1.0.42-SNAPSHOT</version>
-    <name>redis-reactive-cache</name>
+    <artifactId>redis-reactive-cache-library</artifactId>
+    <version>1.0.46-SNAPSHOT</version>
+    <name>redis-reactive-cache-library</name>
     <description>Demo project for Spring Boot</description>
 
     <properties>

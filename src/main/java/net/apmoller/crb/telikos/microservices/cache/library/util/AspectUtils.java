@@ -18,11 +18,8 @@ public class AspectUtils {
 
     private final ExpressionParser expressionParser = new SpelExpressionParser();
 
-    public String getKeyVal(JoinPoint joinPoint, String key, boolean useArgsHash) {
+    public String getKeyVal(JoinPoint joinPoint, String key) {
         String cacheKey = resolveKey(joinPoint, key);
-        if (useArgsHash)
-            return cacheKey + "_" + Arrays.hashCode(joinPoint.getArgs());
-        else
             return cacheKey;
 
     }

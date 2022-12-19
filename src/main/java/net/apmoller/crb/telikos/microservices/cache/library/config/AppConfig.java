@@ -37,9 +37,6 @@ public class AppConfig {
     private AspectUtils aspectUtils;
 
 
-    private final String CACHE_NAME = "test-cache";
-
-
     @Autowired
     Environment env;
 
@@ -70,7 +67,7 @@ public class AppConfig {
     @Bean
     @DependsOn("redissonReactiveClient")
     public RMapCacheReactive<String, ProductDto> writeThroughRMapCache() {
-        final RMapCacheReactive<String, ProductDto> employeeRMapCache = redissonReactiveClient().getMapCache(CACHE_NAME, StringCodec.INSTANCE, MapOptions.<String, ProductDto>defaults()
+        final RMapCacheReactive<String, ProductDto> employeeRMapCache = redissonReactiveClient().getMapCache(env.getProperty("redis.cache-name"), StringCodec.INSTANCE, MapOptions.<String, ProductDto>defaults()
                 .writer(getWriteThroughMapWriter())
                 .writeMode(MapOptions.WriteMode.WRITE_THROUGH));
 
@@ -100,7 +97,7 @@ public class AppConfig {
     @Bean
     @DependsOn("redissonReactiveClient")
     public RMapCacheReactive<String, ProductDto> writeBehindRMapCache() {
-        final RMapCacheReactive<String, ProductDto> employeeRMapCache = redissonReactiveClient().getMapCache(CACHE_NAME, StringCodec.INSTANCE, MapOptions.<String, ProductDto>defaults()
+        final RMapCacheReactive<String, ProductDto> employeeRMapCache = redissonReactiveClient().getMapCache(env.getProperty("redis.cache-name"), StringCodec.INSTANCE, MapOptions.<String, ProductDto>defaults()
                 .writer(getMapWriterForWriteBehind())
                 .writeBehindDelay(6000)
                 .writeMode(MapOptions.WriteMode.WRITE_BEHIND));
@@ -139,7 +136,7 @@ public class AppConfig {
         System.out.println("in readThroughRMapCacheReader");
 
 
-        final RMapCacheReactive<String, Booking> employeeRMapCache = redissonReactiveClient().getMapCache(CACHE_NAME, StringCodec.INSTANCE, MapOptions.<String, Booking>defaults()
+        final RMapCacheReactive<String, Booking> employeeRMapCache = redissonReactiveClient().getMapCache(env.getProperty("redis.cache-name"), StringCodec.INSTANCE, MapOptions.<String, Booking>defaults()
                 .loader(readThroughMapLoader));
         return employeeRMapCache;
     }
@@ -181,8 +178,15 @@ public class AppConfig {
 
     @Bean
     @DependsOn("redissonReactiveClient")
-    public RMapCacheReactive<String, Booking> cacheAsideRMapCache() {
-        final RMapCacheReactive<String, Booking> employeeRMapCache = redissonReactiveClient().getMapCache(CACHE_NAME, StringCodec.INSTANCE, MapOptions.<String, Booking>defaults());
+    public RMapCacheReactive<String, Booking> cacheAsideRMapReadCache() {
+        final RMapCacheReactive<String, Booking> employeeRMapCache = redissonReactiveClient().getMapCache(env.getProperty("redis.cache-name"), StringCodec.INSTANCE, MapOptions.<String, Booking>defaults());
+        return employeeRMapCache;
+    }
+
+    @Bean
+    @DependsOn("redissonReactiveClient")
+    public RMapCacheReactive<String, ProductDto> cacheAsideRMapWriteCache() {
+        final RMapCacheReactive<String, ProductDto> employeeRMapCache = redissonReactiveClient().getMapCache(env.getProperty("redis.cache-name"), StringCodec.INSTANCE, MapOptions.<String, ProductDto>defaults());
         return employeeRMapCache;
     }
 
