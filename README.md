@@ -1,4 +1,4 @@
-# Redis Reactive Cache  as LIbrary
+# Redis Reactive Cache  as Library
 
 ## Description
 
