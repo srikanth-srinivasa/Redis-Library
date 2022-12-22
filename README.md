@@ -7,12 +7,12 @@ It is self Auto Configurable, all you need is to import it as dependency.
 
 ```
 This library provides 2 annotations:
-1) @CacheAsideRead` - get the  stored value  for teh given Key .
-2) @CacheAsideWrite` - set the cache value for the given Key.
+1) @CacheAsideRead - get the  stored value  for teh given Key .
+2) @CacheAsideWrite - set the cache value for the given Key.
 
 ```
 All of those annotations has 1 arguments:
-* key - cache key, either String or evaluated expressions started with `#` (see in usage examples)
+ key - cache key, either String or evaluated expressions started with `#` (see in usage examples)
 
 ```
 ## Usage Example:
