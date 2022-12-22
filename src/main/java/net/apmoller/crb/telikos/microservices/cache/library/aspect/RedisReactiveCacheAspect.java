@@ -6,6 +6,7 @@ import net.apmoller.crb.telikos.microservices.cache.library.annotation.CacheAsid
 import net.apmoller.crb.telikos.microservices.cache.library.annotation.CacheAsideWrite;
 import net.apmoller.crb.telikos.microservices.cache.library.exception.CacheException;
 import net.apmoller.crb.telikos.microservices.cache.library.util.AspectUtils;
+import net.apmoller.crb.telikos.microservices.cache.library.util.CacheConstants;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -77,6 +78,7 @@ public class RedisReactiveCacheAspect {
         }
     }
 
+
     /**
      * @param joinPoint
      * @return object
@@ -104,7 +106,7 @@ public class RedisReactiveCacheAspect {
 
             log.info(" Cache Value   {} ",cacheValueObject);
 
-        return (T)  cacheAsideRMapWriteCache.put(key, cacheValueObject,Long.parseLong(env.getProperty("redis.cache-ttl")), TimeUnit.MINUTES).then();
+        return (T)  cacheAsideRMapWriteCache.put(key, cacheValueObject,Long.parseLong(env.getProperty(CacheConstants.REDIS_CACHE_TTL)), TimeUnit.MINUTES).then();
 
         }
         catch(Exception e){
