@@ -1,105 +1,64 @@
-# Redis Reactive Cache for Spring Boot WebFlux
+# Redis Reactive Cache  as LIbrary
 
 ## Description
 
-This Redis Reactive Cache library brings reactive cache functionality to your Spring Boot WebFlux project<br/> 
+This Redis Reactive Cache library brings reactive cache functionality to  Spring Boot project<br/> 
 It is self Auto Configurable, all you need is to import it as dependency.
 
-This library provides 4 annotations:
-* `@RedisReactiveCacheAdd` - stores cache after the method execution behind the scenes without blocking server response.
-* `@RedisReactiveCacheGet` - gets cache, if cache not available, it will execute the method and store the result (without blocking server response) in cache for future use.
-* `@RedisReactiveCacheUpdate` - removes cache without blocking, execute annotated method and store the result in cache (without blocking server response).
-* `@RedisReactiveCacheEvict` - removes cache without blocking.
+```
+This library provides 2 annotations:
+1) @CacheAsideRead` - get the  stored value  for teh given Key .
+2) @CacheAsideWrite` - set the cache value for the given Key.
 
-You can annotate your methods with any of them, and it will be automatically cached.
-All of those annotations has 2 arguments:
-* `key` - cache key, either String or evaluated expressions started with `#` (see in usage examples)
-* `useArgsHash` - default is `false`, if you want to use the method arguments hash as cache key postfix,<br/> 
-set it to `true`. Very useful for collections parameters. 
+```
+All of those annotations has 1 arguments:
+* key - cache key, either String or evaluated expressions started with `#` (see in usage examples)
 
+```
 ## Usage Example:
 
-```java
+java File <br/> 
+
 @Service
-public class YourServiceClass {
-    
-    @RedisReactiveCacheAdd(key = "<your_key>")
-    public Mono<TestTable> storeInDb(String name) {
-        //your reactive call to DB
-        //yourReactiveRepository.save(new DBModel(name));
-    }
+public class ProductServiceImpl implements ProductService {
 
-    @RedisReactiveCacheAdd(key = "names", useArgsHash = true) //CacheKey will be: names_<hash_of_args>
-    public Flux<TestTable> storeMultipleInDb(List<String> names) {
-        //your reactive call to DB
-    }
+  @Override
+  @CacheAsideRead(key = "#id")
+  public Mono<Booking> cacheAsideRead(String id) {
+    return this.cacheAsideRead(id);
+  }
 
-    @RedisReactiveCacheGet(key = "#name") //CacheKey will be: value of name argument
-    public Mono<TestTable> getFromDb(String name) {
-        //your reactive call to DB
-    }
 
-    @RedisReactiveCacheGet(key = "names", useArgsHash = true)
-    public Flux<TestTable> getMultipleFromDb(List<String> names) {
-        //your reactive call to DB
-    }
+  @Override
+  @CacheAsideWrite(key =  "#productDto.id")
+  public Mono<Void> cacheAsideWrite(ProductDto productDto) {
+    return Mono.empty().then();
 
-    @RedisReactiveCacheUpdate(key = "#testTable.getId().toString()")
-    public Mono<TestTable> updateDbRecord(DbModel dbModel) {
-        //your reactive call to DB
-    }
-
-    @RedisReactiveCacheUpdate(key = "multiple")
-    public Flux<TestTable> updateMultipleDbRecords(List<DbModel> dbModels) {
-        //your reactive call to DB
-    }
-
-    @RedisReactiveCacheEvict(key = "#testTable.getName()")
-    public Mono<Void> deleteDbRec(DbModel dbModel) {
-        //your reactive call to DB
-    }
-
-    @RedisReactiveCacheEvict(key = "names", useArgsHash = true)
-    public Mono<Void> deleteMultipleDbRecs(List<DbModel> dbModels) {
-        //your reactive call to DB
-    }
-}
+  }
+  
 ```
 
-These annotations could be used directly on your Reactive Repository interface:
-```java
-public interface yourReactiveRepo extends ReactiveCrudRepository<YourDBModel, PkType> {
 
-    @RedisReactiveCacheGet(key = "#somefield")
-    Mono<DbModel> FindBySomeField(String someField);
-}
+```
+Redis connection properties are defined in the  Calling project as shown  in the yml <br/>
+redis:
+  ssl: true
+  host: 127.0.0.1
+  port: 6379
+  cache-name: "cache-test"
+  cache-ttl: 1
+  
+```  
+``` 
+Include  the Version of the Library in the Calling projecta as shown <br/>
+
+    <dependency>
+        <groupId>net.apmoller.crb.telikos</groupId>
+        <artifactId>redis-reactive-cache-library</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </dependency>
+
+
+
 ```
 
-## Properties
-
-Redis connection properties are default Spring Boot properties
-```yaml
-spring:
-  redis:
-    host: <your_redis_host>
-    port: <your_redis_port>
-    #etc...
-    
-    #Additional properties for this library 
-    date_format: "dd-MM-yyyy"
-    time_format: "HH:mm:ss"
-```
-Additionally, you may define your RedisConnectionFactory Bean in the code the way you need it, but not required.
-
-## Build
-
-_**Note:** requires running Docker for TestContainers_
-
-Just run:
-```shell
-./build-jar.sh
-```
-or
-```shell
-./build-jar.sh <optional_build_version> <optional_gradle_action>
-```
