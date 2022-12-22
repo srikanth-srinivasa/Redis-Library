@@ -34,19 +34,19 @@ public class RedisReactiveCacheAspect {
 
     @Autowired
     @Qualifier("cacheAsideRMapReadCache")
-    private RMapCacheReactive<Object, Object> cacheAsideRMapReadCache;
+    public  RMapCacheReactive<Object , Object>   cacheAsideRMapReadCache ;
 
 
     @Autowired
     @Qualifier("cacheAsideRMapWriteCache")
-    private RMapCacheReactive<Object, Object> cacheAsideRMapWriteCache;
+    private  RMapCacheReactive<Object,Object> cacheAsideRMapWriteCache;
 
     /**
      * @param joinPoint
      * @return object
      */
     @Around("execution(public * *(..)) && @annotation(net.apmoller.crb.telikos.microservices.cache.library.annotation.CacheAsideRead)")
-    public Object CacheAsideRead(ProceedingJoinPoint joinPoint) {
+    public <T> T CacheAsideRead(ProceedingJoinPoint joinPoint) {
 
         try{
             log.info(" In CacheAsideRead  ");
@@ -62,11 +62,13 @@ public class RedisReactiveCacheAspect {
 
         String key = aspectUtils.getKeyVal(joinPoint, annotation.key());
 
+
+
             log.info("  cache  key   {} ",key);
 
 
             // Get the  value for the given Key in cache else return empty
-            return cacheAsideRMapReadCache.get(key).switchIfEmpty(Mono.defer(() ->Mono.empty()));
+            return (T)  cacheAsideRMapReadCache.get(key).switchIfEmpty(Mono.defer(() ->Mono.empty()));
 
         }
         catch(Exception e){
@@ -80,7 +82,7 @@ public class RedisReactiveCacheAspect {
      * @return object
      */
     @Around("execution(public * *(..)) && @annotation(net.apmoller.crb.telikos.microservices.cache.library.annotation.CacheAsideWrite)")
-    public Object CacheAsideWrite(ProceedingJoinPoint joinPoint) {
+    public <T> T  CacheAsideWrite(ProceedingJoinPoint joinPoint) {
 
 
 
@@ -98,11 +100,11 @@ public class RedisReactiveCacheAspect {
 
             log.info(" Cache key    {} ",key);
 
-        Object cacheValueObject = Stream.of(joinPoint.getArgs()).findFirst().get();
+        var cacheValueObject = Stream.of(joinPoint.getArgs()).findFirst().get();
 
             log.info(" Cache Value   {} ",cacheValueObject);
 
-        return cacheAsideRMapWriteCache.put(key, cacheValueObject,Long.parseLong(env.getProperty("redis.cache-ttl")), TimeUnit.MINUTES).then();
+        return (T)  cacheAsideRMapWriteCache.put(key, cacheValueObject,Long.parseLong(env.getProperty("redis.cache-ttl")), TimeUnit.MINUTES).then();
 
         }
         catch(Exception e){

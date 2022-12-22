@@ -1,5 +1,4 @@
 # AutoConfigure library
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  net/apmoller/crb/telikos/microservices/cache/library/config/RedisReactiveCacheConfig,\
   net/apmoller/crb/telikos/microservices/cache/library/config/AppConfig
 
