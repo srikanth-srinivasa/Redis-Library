@@ -3,6 +3,7 @@ package net.apmoller.crb.telikos.microservices.cache.library.config;
 
 import lombok.extern.slf4j.Slf4j;
 import net.apmoller.crb.telikos.microservices.cache.library.util.AspectUtils;
+import net.apmoller.crb.telikos.microservices.cache.library.util.CacheConstants;
 import org.redisson.Redisson;
 import org.redisson.api.MapOptions;
 import org.redisson.api.RMapCacheReactive;
@@ -32,8 +33,8 @@ public class AppConfig {
 
         Config config = new Config();
 
-        String redisProtocol = Boolean.parseBoolean(env.getProperty("redis.ssl")) ? "redis://" : "rediss://";
-        config.useSingleServer().setAddress(redisProtocol + env.getProperty("redis.host")  +  ":" +   Integer.parseInt(env.getProperty("redis.port")));
+        String redisProtocol = Boolean.parseBoolean(env.getProperty(CacheConstants.REDIS_SSL)) ? CacheConstants.REDIS_SSL_REDIS : CacheConstants.REDIS_SSL_REDISS;
+        config.useSingleServer().setAddress(redisProtocol + env.getProperty(CacheConstants.REDIS_HOST)  +  ":" +   Integer.parseInt(env.getProperty(CacheConstants.REDIS_PORT)));
 
         RedissonClient redisson = Redisson.create(config);
         RedissonReactiveClient redissonReactive = redisson.reactive();
