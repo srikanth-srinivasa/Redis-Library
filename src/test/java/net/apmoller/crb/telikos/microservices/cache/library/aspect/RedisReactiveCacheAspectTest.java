@@ -137,14 +137,23 @@ class RedisReactiveCacheAspectTest {
 
         final TestPublisher<String> testPublisher = TestPublisher.create();
 
+//        StepVerifier
+//                .create( redisReactiveCacheAspect.CacheAsideRead(proceedingJoinPoint))
+//                .then(() -> testPublisher.emit(String.valueOf(value)))
+//                //.expectNext("test")
+//               // .expectNextMatches(str -> str.equals("test")) //predicate
+//               // .expectNextCount(1) // for Flux
+//                .assertNext(Assertions::assertNotNull)
+//                .verifyComplete();
+
+
         StepVerifier
                 .create( redisReactiveCacheAspect.CacheAsideRead(proceedingJoinPoint))
-                .then(() -> testPublisher.emit(String.valueOf(value)))
-                //.expectNext("test")
-               // .expectNextMatches(str -> str.equals("test")) //predicate
-               // .expectNextCount(1) // for Flux
-                .assertNext(Assertions::assertNotNull)
-                .verifyComplete();
+               // .then(() -> testPublisher.emit(String.valueOf(value)))
+            .consumeNextWith(r -> {
+            //assertEquals(value.block(), Mono.just(r).block()); // get the String value of the mono
+                assertEquals(value.block(), r);
+        }).verifyComplete();
 
     }
 
@@ -172,11 +181,16 @@ class RedisReactiveCacheAspectTest {
 
         final TestPublisher<String> testPublisher = TestPublisher.create();
 
-        StepVerifier
-                .create( redisReactiveCacheAspect.CacheAsideWrite(proceedingJoinPoint))
-               .then(() -> testPublisher.emit(String.valueOf(value)))
-                .assertNext(Assertions::assertNotNull)
-                .expectComplete();
+
+//        StepVerifier
+//                .create( redisReactiveCacheAspect.CacheAsideWrite(proceedingJoinPoint))
+//                .then(() -> testPublisher.emit(String.valueOf(value)))
+//                .assertNext(Assertions::assertNotNull)
+//                .expectComplete();
+//        
+        
+        // As we do not have any thing to return, we expect no throw
+        assertDoesNotThrow(() -> redisReactiveCacheAspect.CacheAsideWrite(proceedingJoinPoint));
 
     }
 
