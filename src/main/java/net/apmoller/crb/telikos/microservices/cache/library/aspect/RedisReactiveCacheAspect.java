@@ -106,7 +106,12 @@ public class RedisReactiveCacheAspect {
 
             log.info(" Cache Value   {} ",cacheValueObject);
 
-        return (T)  cacheAsideRMapWriteCache.put(key, cacheValueObject,Long.parseLong(env.getProperty(CacheConstants.REDIS_CACHE_TTL)), TimeUnit.MINUTES).then();
+        return (T)  cacheAsideRMapWriteCache.put(key, cacheValueObject,Long.parseLong(env.getProperty(CacheConstants.REDIS_CACHE_TTL)), TimeUnit.MINUTES).then().doOnError(e->{
+
+            log.error("exception occurred while saving data to  cache {}", e.getMessage());
+
+            throw new CacheException(e.getMessage());
+        });
 
         }
         catch(Exception e){
@@ -118,6 +123,3 @@ public class RedisReactiveCacheAspect {
 
 
 }
-
-
-
