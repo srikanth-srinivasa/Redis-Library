@@ -69,7 +69,11 @@ public class RedisReactiveCacheAspect {
 
 
             // Get the  value for the given Key in cache else return empty
-            return (T)  cacheAsideRMapReadCache.get(key).switchIfEmpty(Mono.defer(() ->Mono.empty()));
+            return (T)  cacheAsideRMapReadCache.get(key).switchIfEmpty(Mono.defer(() ->Mono.empty())).doOnError(e->{
+
+                log.error("exception occurred while reading data from   cache {}", e.getMessage());
+                throw new CacheException(e.getMessage());
+            });
 
         }
         catch(Exception e){
@@ -123,3 +127,6 @@ public class RedisReactiveCacheAspect {
 
 
 }
+
+
+
