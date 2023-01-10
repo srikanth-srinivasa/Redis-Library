@@ -18,15 +18,32 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.core.env.Environment;
 
+
+/**
+ * This class  is used  for configuring  the Redis parameter and Read/Write caching RMap
+ */
+
 @Slf4j
 @Configuration
 @ComponentScan(basePackages = "net.apmoller.crb.telikos.microservices.cache.library")
 public class AppConfig {
 
+    /*
+     AspectUtils  utility class
+   */
     private AspectUtils aspectUtils;
 
+    /*
+    Environment for TTL
+   */
     @Autowired
     Environment env;
+
+
+    /**
+     * Method to  Config redis connection
+     * @return RedissonReactiveClient
+     */
 
     @Bean
     public RedissonReactiveClient redissonReactiveClient() {
@@ -43,6 +60,11 @@ public class AppConfig {
     }
 
 
+    /**
+     * Method to  fetch the cache map for Read
+     * @return RMapCacheReactive
+     */
+
     @Bean
     @DependsOn("redissonReactiveClient")
     public RMapCacheReactive<Object, Object> cacheAsideRMapReadCache() {
@@ -50,12 +72,22 @@ public class AppConfig {
         return employeeRMapCache;
     }
 
+    /**
+     * Method to  fetch the cache map for Write
+     * @return RMapCacheReactive
+     */
+
     @Bean
     @DependsOn("redissonReactiveClient")
     public RMapCacheReactive<Object, Object> cacheAsideRMapWriteCache() {
         final RMapCacheReactive<Object, Object> employeeRMapCache = redissonReactiveClient().getMapCache(env.getProperty("redis.cache-name"), JsonJacksonCodec.INSTANCE, MapOptions.<Object, Object>defaults());
         return employeeRMapCache;
     }
+
+    /**
+     * Method for  AspectUtils
+     * @return AspectUtils
+     */
 
     @Bean
     public AspectUtils aspectUtils() {
